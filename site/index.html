@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Моя Библиотека</title>
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      background: linear-gradient(135deg, #eef2ff, #e0e7ff);
+      color: #333;
+      margin: 0;
+      padding: 30px;
+      text-align: center;
+      min-height: 100vh;
+      position: relative;
+    }
+    h1 {
+      color: #6b46c1;
+      font-size: 2.5em;
+      margin: 0 0 20px 0;
+      text-shadow: 1px 1px 3px rgba(0,0,0,0.1);
+    }
+    .back-btn {
+      position: absolute;
+      top: 30px;
+      left: 30px;
+      background: #6b46c1;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 25px;
+      cursor: pointer;
+      font-size: 1em;
+      font-weight: bold;
+      box-shadow: 0 4px 15px rgba(107,70,193,0.3);
+      transition: transform 0.3s, box-shadow 0.3s;
+    }
+    .back-btn:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 6px 20px rgba(107,70,193,0.4);
+    }
+    .search-container {
+      margin-bottom: 40px;
+      position: relative;
+    }
+    .search-container input {
+      padding: 12px;
+      width: 300px;
+      border: 2px solid #6b46c1;
+      border-radius: 25px;
+      font-size: 16px;
+      outline: none;
+      transition: border-color 0.3s;
+    }
+    .search-container input:focus {
+      border-color: #4a2eb1;
+    }
+    .search-container button {
+      padding: 12px 25px;
+      background: #6b46c1;
+      color: white;
+      border: none;
+      border-radius: 25px;
+      cursor: pointer;
+      margin-left: 10px;
+      font-weight: bold;
+      transition: background 0.3s, transform 0.2s;
+    }
+    .search-container button:hover {
+      background: #4a2eb1;
+      transform: scale(1.05);
+    }
+    .suggestions {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      width: 300px;
+      background: white;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      max-height: 200px;
+      overflow-y: auto;
+      display: none;
+      animation: slideIn 0.3s ease-out forwards;
+      transform-origin: top;
+      z-index: 1000; /* Убедимся, что подсказки поверх всего */
+    }
+    .suggestions.active {
+      display: block;
+    }
+    @keyframes slideIn {
+      0% {
+        opacity: 0;
+        transform: translateY(-10px) scale(0.95);
+      }
+      100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+    .suggestion-item {
+      padding: 10px;
+      cursor: pointer;
+      transition: background 0.3s, transform 0.2s;
+    }
+    .suggestion-item:hover {
+      background: #eef2ff;
+      transform: translateX(5px);
+    }
+    .book-grid {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 20px;
+    }
+    .book-card {
+      background: white;
+      border-radius: 15px;
+      padding: 15px;
+      width: 200px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      text-align: left;
+      transition: transform 0.3s, box-shadow 0.3s;
+    }
+    .book-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+    }
+    .book-card img {
+      width: 100%;
+      height: auto;
+      border-radius: 10px;
+      margin-bottom: 10px;
+    }
+    .book-card h3 {
+      color: #6b46c1;
+      margin: 0 0 10px 0;
+      font-size: 1.2em;
+    }
+    .book-card h3 a {
+      color: #6b46c1;
+      text-decoration: none;
+    }
+    .book-card h3 a:hover {
+      text-decoration: underline;
+    }
+    .book-card p {
+      margin: 5px 0;
+      font-size: 14px;
+      color: #555;
+    }
+    .add-btn {
+      position: fixed;
+      bottom: 30px;
+      right: 30px;
+      background: #6b46c1;
+      color: white;
+      border: none;
+      padding: 15px 25px;
+      border-radius: 25px;
+      cursor: pointer;
+      font-size: 1.1em;
+      font-weight: bold;
+      box-shadow: 0 4px 15px rgba(107,70,193,0.3);
+      transition: transform 0.3s, box-shadow 0.3s;
+    }
+    .add-btn:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 6px 20px rgba(107,70,193,0.4);
+    }
+    .remove-btn {
+      position: fixed;
+      bottom: 30px;
+      left: 30px;
+      background: #ef4444;
+      color: white;
+      border: none;
+      padding: 15px 25px;
+      border-radius: 25px;
+      cursor: pointer;
+      font-size: 1.1em;
+      font-weight: bold;
+      box-shadow: 0 4px 15px rgba(239,68,68,0.3);
+      transition: transform 0.3s, box-shadow 0.3s;
+    }
+    .remove-btn:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 6px 20px rgba(239,68,68,0.4);
+    }
+  </style>
+</head>
+<body>
+  <button class="back-btn" onclick="resetSearch()">← Назад</button>
+  <h1>Моя Библиотека</h1>
+  <div class="search-container">
+    <input type="text" id="searchInput" placeholder="Поиск по названию книги..." onkeyup="showSuggestions()" onkeydown="if(event.key === 'Enter') searchBooks()">
+    <div class="suggestions" id="suggestions"></div>
+    <button onclick="searchBooks()">Найти</button>
+  </div>
+  <div class="book-grid" id="bookGrid"></div>
+  <button class="add-btn" onclick="addBook()">➕ Добавить книгу</button>
+  <button class="remove-btn" onclick="removeBook()">✖ Удалить книгу</button>
+
+  <script>
+    let books = [
+      { title: "Сто лет одиночества", author: "Габриэль Гарсия Маркес", desc: "Магический реализм и история семьи.", wiki_url: "https://ru.wikipedia.org/wiki/Сто_лет_одиночества", cover_url: "https://imo10.labirint.ru/books/594340/cover.jpg/484-0" },
+      { title: "Преступление и наказание", author: "Фёдор Достоевский", desc: "Психологический роман о морали.", wiki_url: "https://ru.wikipedia.org/wiki/Преступление_и_наказание", cover_url: "https://russianbooksusa.com/wp-content/uploads/2021/08/6064877577.jpg" },
+      { title: "Бытие и время", author: "Мартин Хайдеггер", desc: "Фундаментальный анализ бытия и экзистенции.", wiki_url: "https://ru.wikipedia.org/wiki/Бытие_и_время", cover_url: "https://imo10.labirint.ru/books/322244/cover.jpg/242-0" },
+      { title: "Критика чистого разума", author: "Иммануил Кант", desc: "Гениальное исследование границ человеческого разума.", wiki_url: "https://ru.wikipedia.org/wiki/Критика_чистого_разума", cover_url: "https://imo10.labirint.ru/books/588461/cover.jpg/484-0" },
+      { title: "Бытие и ничто", author: "Жан-Поль Сартр", desc: "Экзистенциалистское исследование свободы и сознания.", wiki_url: "https://ru.wikipedia.org/wiki/Бытие_и_ничто", cover_url: "https://content.img-gorod.ru/pim/products/images/9e/55/018fa20d-ee4a-7950-a57d-c858f1609e55.jpg" },
+      { title: "Происхождение видов", author: "Чарльз Дарвин", desc: "Революционная теория эволюции и естественного отбора.", wiki_url: "https://ru.wikipedia.org/wiki/Происхождение_видов", cover_url: "https://imo10.labirint.ru/books/615628/cover.jpg/242-0" },
+      { title: "Трактат о человеческой природе", author: "Дэвид Юм", desc: "Классический труд по эмпиризму и морали.", wiki_url: "https://ru.wikipedia.org/wiki/Трактат_о_человеческой_природе", cover_url: "https://imo10.labirint.ru/books/840326/cover.jpg/484-0" }
+    ];
+
+    function renderBooks(filteredBooks = books) {
+      const bookGrid = document.getElementById('bookGrid');
+      bookGrid.innerHTML = '';
+      filteredBooks.forEach(book => {
+        const bookCard = document.createElement('div');
+        bookCard.className = 'book-card';
+        bookCard.innerHTML = `
+          ${book.cover_url ? `<img src="${book.cover_url}" alt="Обложка ${book.title}" onerror="this.style.display='none'">` : ''}
+          <h3><a href="${book.wiki_url}" target="_blank">${book.title}</a></h3>
+          <p>Автор: ${book.author}</p>
+          <p>${book.desc}</p>
+        `;
+        bookGrid.appendChild(bookCard);
+      });
+      console.log('Rendered books:', filteredBooks);
+    }
+
+    function addBook() {
+      const title = prompt("Введите название книги:");
+      if (title) {
+        const author = prompt("Введите автора:");
+        const desc = prompt("Введите описание:");
+        const wiki_url = prompt("Введите URL Википедии (опционально):") || `https://ru.wikipedia.org/wiki/${encodeURIComponent(title)}`;
+        const cover_url = prompt("Введите URL обложки (опционально):") || '';
+        if (author && desc) {
+          books.push({ title, author, desc, wiki_url, cover_url });
+          renderBooks();
+        }
+      }
+    }
+
+    function removeBook() {
+      const title = prompt("Введите название книги для удаления:");
+      if (title) {
+        const index = books.findIndex(book => book.title.toLowerCase() === title.toLowerCase());
+        if (index !== -1) {
+          books.splice(index, 1);
+          renderBooks();
+        } else {
+          alert("Книга не найдена!");
+        }
+      }
+    }
+
+    function searchBooks() {
+      const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+      const filteredBooks = books.filter(book => book.title.toLowerCase().includes(searchTerm));
+      renderBooks(filteredBooks);
+      console.log('Search term:', searchTerm, 'Filtered books:', filteredBooks);
+    }
+
+    function resetSearch() {
+      document.getElementById('searchInput').value = '';
+      renderBooks();
+    }
+
+    function showSuggestions() {
+      const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+      const suggestions = document.getElementById('suggestions');
+      suggestions.innerHTML = '';
+      console.log('Search term for suggestions:', searchTerm);
+      if (searchTerm) {
+        const filteredSuggestions = books.filter(book => book.title.toLowerCase().includes(searchTerm));
+        console.log('Filtered suggestions:', filteredSuggestions);
+        if (filteredSuggestions.length > 0) {
+          filteredSuggestions.forEach(book => {
+            const item = document.createElement('div');
+            item.className = 'suggestion-item';
+            item.textContent = `${book.title} - ${book.author}`;
+            item.onclick = () => {
+              document.getElementById('searchInput').value = book.title;
+              suggestions.classList.remove('active');
+              setTimeout(() => suggestions.style.display = 'none', 300);
+              searchBooks();
+            };
+            suggestions.appendChild(item);
+          });
+          suggestions.style.display = 'none';
+          void suggestions.offsetWidth; // Trigger reflow
+          suggestions.classList.add('active');
+        } else {
+          suggestions.classList.remove('active');
+          suggestions.style.display = 'none';
+        }
+      } else {
+        suggestions.classList.remove('active');
+        suggestions.style.display = 'none';
+      }
+    }
+
+    document.getElementById('searchInput').addEventListener('blur', () => {
+      const suggestions = document.getElementById('suggestions');
+      suggestions.classList.remove('active');
+      setTimeout(() => suggestions.style.display = 'none', 200);
+    });
+
+    renderBooks();
+  </script>
+</body>
+</html>
