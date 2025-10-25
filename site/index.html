@@ -77,36 +77,27 @@
       width: 300px;
       background: white;
       border: 1px solid #ddd;
-      border-radius: 10px;
+      border-radius: 0 0 10px 10px;
       box-shadow: 0 4px 15px rgba(0,0,0,0.1);
       max-height: 200px;
       overflow-y: auto;
       display: none;
-      animation: slideIn 0.3s ease-out forwards;
-      transform-origin: top;
-      z-index: 1000; /* Убедимся, что подсказки поверх всего */
+      z-index: 1000;
     }
     .suggestions.active {
       display: block;
     }
-    @keyframes slideIn {
-      0% {
-        opacity: 0;
-        transform: translateY(-10px) scale(0.95);
-      }
-      100% {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-      }
-    }
     .suggestion-item {
-      padding: 10px;
+      padding: 10px 15px;
       cursor: pointer;
-      transition: background 0.3s, transform 0.2s;
+      transition: background 0.2s;
+      text-align: left;
     }
     .suggestion-item:hover {
-      background: #eef2ff;
-      transform: translateX(5px);
+      background: #f1f3f4;
+    }
+    .suggestion-item strong {
+      color: #202124;
     }
     .book-grid {
       display: flex;
@@ -188,13 +179,21 @@
       transform: translateY(-5px);
       box-shadow: 0 6px 20px rgba(239,68,68,0.4);
     }
+    .result-message {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 1.5em;
+      color: #6b46c1;
+    }
   </style>
 </head>
 <body>
   <button class="back-btn" onclick="resetSearch()">← Назад</button>
   <h1>Моя Библиотека</h1>
   <div class="search-container">
-    <input type="text" id="searchInput" placeholder="Поиск по названию книги..." onkeyup="showSuggestions()" onkeydown="if(event.key === 'Enter') searchBooks()">
+    <input type="text" id="searchInput" placeholder="Поиск по названию книги..." oninput="showSuggestions()" onkeydown="if(event.key === 'Enter') searchBooks()">
     <div class="suggestions" id="suggestions"></div>
     <button onclick="searchBooks()">Найти</button>
   </div>
@@ -216,18 +215,41 @@
     function renderBooks(filteredBooks = books) {
       const bookGrid = document.getElementById('bookGrid');
       bookGrid.innerHTML = '';
-      filteredBooks.forEach(book => {
-        const bookCard = document.createElement('div');
-        bookCard.className = 'book-card';
-        bookCard.innerHTML = `
-          ${book.cover_url ? `<img src="${book.cover_url}" alt="Обложка ${book.title}" onerror="this.style.display='none'">` : ''}
-          <h3><a href="${book.wiki_url}" target="_blank">${book.title}</a></h3>
-          <p>Автор: ${book.author}</p>
-          <p>${book.desc}</p>
-        `;
-        bookGrid.appendChild(bookCard);
-      });
-      console.log('Rendered books:', filteredBooks);
+
+      const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+      const filtered = books.filter(book => book.title.toLowerCase().includes(searchTerm));
+
+      if (filtered.length === 0 && searchTerm) {
+        const message = document.createElement('div');
+        message.className = 'result-message';
+        message.textContent = 'Ничего не найдено';
+        bookGrid.appendChild(message);
+      } else if (searchTerm) {
+        filtered.forEach(book => {
+          const bookCard = document.createElement('div');
+          bookCard.className = 'book-card';
+          bookCard.innerHTML = `
+            ${book.cover_url ? `<img src="${book.cover_url}" alt="Обложка ${book.title}" onerror="this.style.display='none'">` : ''}
+            <h3><a href="${book.wiki_url}" target="_blank">${book.title}</a></h3>
+            <p>Автор: ${book.author}</p>
+            <p>${book.desc}</p>
+          `;
+          bookGrid.appendChild(bookCard);
+        });
+      } else {
+        filtered.forEach(book => {
+          const bookCard = document.createElement('div');
+          bookCard.className = 'book-card';
+          bookCard.innerHTML = `
+            ${book.cover_url ? `<img src="${book.cover_url}" alt="Обложка ${book.title}" onerror="this.style.display='none'">` : ''}
+            <h3><a href="${book.wiki_url}" target="_blank">${book.title}</a></h3>
+            <p>Автор: ${book.author}</p>
+            <p>${book.desc}</p>
+          `;
+          bookGrid.appendChild(bookCard);
+        });
+      }
+      console.log('Rendered books:', filtered);
     }
 
     function addBook() {
@@ -258,10 +280,7 @@
     }
 
     function searchBooks() {
-      const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-      const filteredBooks = books.filter(book => book.title.toLowerCase().includes(searchTerm));
-      renderBooks(filteredBooks);
-      console.log('Search term:', searchTerm, 'Filtered books:', filteredBooks);
+      renderBooks();
     }
 
     function resetSearch() {
@@ -273,40 +292,44 @@
       const searchTerm = document.getElementById('searchInput').value.toLowerCase();
       const suggestions = document.getElementById('suggestions');
       suggestions.innerHTML = '';
-      console.log('Search term for suggestions:', searchTerm);
+
       if (searchTerm) {
         const filteredSuggestions = books.filter(book => book.title.toLowerCase().includes(searchTerm));
-        console.log('Filtered suggestions:', filteredSuggestions);
         if (filteredSuggestions.length > 0) {
           filteredSuggestions.forEach(book => {
             const item = document.createElement('div');
             item.className = 'suggestion-item';
-            item.textContent = `${book.title} - ${book.author}`;
-            item.onclick = () => {
+            item.innerHTML = `<strong>${book.title}</strong> - ${book.author}`;
+            item.addEventListener('click', () => {
               document.getElementById('searchInput').value = book.title;
               suggestions.classList.remove('active');
-              setTimeout(() => suggestions.style.display = 'none', 300);
+              suggestions.style.display = 'none';
               searchBooks();
-            };
+            });
             suggestions.appendChild(item);
           });
-          suggestions.style.display = 'none';
-          void suggestions.offsetWidth; // Trigger reflow
           suggestions.classList.add('active');
         } else {
           suggestions.classList.remove('active');
-          suggestions.style.display = 'none';
         }
       } else {
         suggestions.classList.remove('active');
-        suggestions.style.display = 'none';
       }
     }
 
     document.getElementById('searchInput').addEventListener('blur', () => {
       const suggestions = document.getElementById('suggestions');
-      suggestions.classList.remove('active');
-      setTimeout(() => suggestions.style.display = 'none', 200);
+      setTimeout(() => {
+        suggestions.classList.remove('active');
+        suggestions.style.display = 'none';
+      }, 200);
+    });
+
+    document.getElementById('searchInput').addEventListener('focus', () => {
+      const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+      if (searchTerm) {
+        showSuggestions();
+      }
     });
 
     renderBooks();
